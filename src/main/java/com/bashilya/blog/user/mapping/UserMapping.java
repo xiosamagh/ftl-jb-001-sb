@@ -6,6 +6,9 @@ import com.bashilya.blog.user.api.response.UserResponse;
 import com.bashilya.blog.user.model.UserDoc;
 import lombok.Getter;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Getter
 public class UserMapping {
     public static class ResponseMapping extends BaseMapping<UserDoc, UserResponse> {
@@ -47,9 +50,21 @@ public class UserMapping {
     }
 
 
+    public static class SearchMapping extends BaseMapping<List<UserDoc>, List<UserResponse>> {
+        private ResponseMapping responseMapping = new ResponseMapping();
+        @Override
+        public List<UserResponse> convert(List<UserDoc> userDocs) {
+            return userDocs.stream().map(responseMapping::convert).collect(Collectors.toList());
+        }
 
+        @Override
+        public List<UserDoc> unmapping(List<UserResponse> userResponses) {
+            throw new RuntimeException("dont use this");
+        }
+    }
     private final ResponseMapping responseMapping = new ResponseMapping();
     private final ResponseFullMapping responseFullMapping = new ResponseFullMapping();
+    private final SearchMapping searchMapping = new SearchMapping();
 
     public static UserMapping getInstance() {
         return new UserMapping();
