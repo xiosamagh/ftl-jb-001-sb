@@ -1,7 +1,9 @@
 package com.bashilya.blog.user.service;
 
 import com.bashilya.blog.user.api.request.RegistrationRequest;
+import com.bashilya.blog.user.api.request.UserRequest;
 import com.bashilya.blog.user.exception.UserExistException;
+import com.bashilya.blog.user.exception.UserNotExistException;
 import com.bashilya.blog.user.model.UserDoc;
 import com.bashilya.blog.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -61,5 +63,23 @@ public class UserApiService {
         query.skip(skip);
 
         return mongoTemplate.find(query, UserDoc.class);
+    }
+
+
+    public UserDoc update(UserRequest request) throws UserNotExistException {
+        Optional<UserDoc> userDocOptional = userRepository.findById(request.getId());
+        if (userDocOptional == null) {
+            throw new UserNotExistException();
+        }
+
+        UserDoc userDoc = userDocOptional.get();
+        userDoc.setLastName(request.getLastName());
+        userDoc.setFirstName(request.getFirstName());
+        userDoc.setAddress(request.getAddress());
+        userDoc.setCompany(request.getCompany());
+
+        userRepository.save(userDoc);
+
+        return userDoc;
     }
 }
