@@ -1,9 +1,11 @@
 package com.bashilya.blog.user.controller;
 
 import com.bashilya.blog.user.api.request.RegistrationRequest;
+import com.bashilya.blog.user.api.request.UserRequest;
 import com.bashilya.blog.user.api.response.UserFullResponse;
 import com.bashilya.blog.user.api.response.UserResponse;
 import com.bashilya.blog.user.exception.UserExistException;
+import com.bashilya.blog.user.exception.UserNotExistException;
 import com.bashilya.blog.user.mapping.UserMapping;
 import com.bashilya.blog.user.model.UserDoc;
 import com.bashilya.blog.user.routes.UserApiRoutes;
@@ -40,6 +42,17 @@ public class UserApiController {
         return UserMapping.getInstance().getSearchMapping().convert(
                 userApiService.search(query,size,skip)
         );
+    }
+
+    @PutMapping(UserApiRoutes.BY_ID)
+    public UserFullResponse updateById(
+            @PathVariable String id,
+            @RequestBody UserRequest userRequest
+            ) throws UserNotExistException {
+        return UserMapping.getInstance().getResponseFullMapping().convert(
+                userApiService.update(userRequest)
+        );
+
     }
 
 
