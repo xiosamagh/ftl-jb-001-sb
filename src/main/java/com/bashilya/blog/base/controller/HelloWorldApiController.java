@@ -1,7 +1,7 @@
 package com.bashilya.blog.base.controller;
 
 import com.bashilya.blog.base.api.response.IndexResponse;
-import com.bashilya.blog.base.request.PostRequest;
+import com.bashilya.blog.base.api.request.PostRequest;
 import com.bashilya.blog.base.routers.ExampleRoutes;
 import org.springframework.web.bind.annotation.*;
 
