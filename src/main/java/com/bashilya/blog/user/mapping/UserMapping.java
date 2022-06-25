@@ -1,5 +1,6 @@
 package com.bashilya.blog.user.mapping;
 
+import com.bashilya.blog.base.api.response.SearchResponse;
 import com.bashilya.blog.base.mapping.BaseMapping;
 import com.bashilya.blog.user.api.response.UserFullResponse;
 import com.bashilya.blog.user.api.response.UserResponse;
@@ -50,15 +51,17 @@ public class UserMapping {
     }
 
 
-    public static class SearchMapping extends BaseMapping<List<UserDoc>, List<UserResponse>> {
+    public static class SearchMapping extends BaseMapping<SearchResponse<UserDoc>, SearchResponse<UserResponse>> {
         private ResponseMapping responseMapping = new ResponseMapping();
         @Override
-        public List<UserResponse> convert(List<UserDoc> userDocs) {
-            return userDocs.stream().map(responseMapping::convert).collect(Collectors.toList());
+        public SearchResponse<UserResponse> convert(SearchResponse<UserDoc> searchResponse) {
+            return SearchResponse.of(searchResponse.getList().stream().map(responseMapping::convert).collect(Collectors.toList()),
+                    searchResponse.getCount());
+
         }
 
         @Override
-        public List<UserDoc> unmapping(List<UserResponse> userResponses) {
+        public SearchResponse<UserDoc> unmapping(SearchResponse<UserResponse> userResponses) {
             throw new RuntimeException("dont use this");
         }
     }

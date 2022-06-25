@@ -1,5 +1,7 @@
 package com.bashilya.blog.user.service;
 
+import com.bashilya.blog.base.api.request.SearchRequest;
+import com.bashilya.blog.base.api.response.SearchResponse;
 import com.bashilya.blog.user.api.request.RegistrationRequest;
 import com.bashilya.blog.user.api.request.UserRequest;
 import com.bashilya.blog.user.exception.UserExistException;
@@ -44,25 +46,26 @@ public class UserApiService {
         return userRepository.findById(id);
     }
 
-    public List<UserDoc> search( String queryString,
-                                 Integer size,
-                                Long skip) {
+    public SearchResponse<UserDoc> search(SearchRequest request) {
 
         Criteria criteria = new Criteria();
-        if (queryString != null && queryString != "") {
+        if (request.getQuery() != null && request.getQuery() != "") {
             criteria = criteria.orOperator(
-                    Criteria.where("firstName").regex(queryString, "i"),
-                    Criteria.where("lastName").regex(queryString, "i"),
-                    Criteria.where("email").regex(queryString, "i")
+                    Criteria.where("firstName").regex(request.getQuery(), "i"),
+                    Criteria.where("lastName").regex(request.getQuery(), "i"),
+                    Criteria.where("email").regex(request.getQuery(), "i")
             );
         }
 
         Query query = new Query(criteria);
 
-        query.limit(size);
-        query.skip(skip);
+        Long count = mongoTemplate.count(query,UserDoc.class);
 
-        return mongoTemplate.find(query, UserDoc.class);
+        query.limit(request.getSize());
+        query.skip(request.getSkip());
+
+        List<UserDoc> userDocs = mongoTemplate.find(query, UserDoc.class);
+        return SearchResponse.of(userDocs,count);
     }
 
 

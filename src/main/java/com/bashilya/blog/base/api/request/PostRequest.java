@@ -1,4 +1,4 @@
-package com.bashilya.blog.base.request;
+package com.bashilya.blog.base.api.request;
 
 import lombok.Getter;
 import lombok.Setter;
