@@ -40,7 +40,7 @@ public class ArticleMapping {
         .id(articleDoc.getId().toString())
         .title(articleDoc.getTitle())
         .body(articleDoc.getBody())
-        .ownerId(articleDoc.getOwnerId())
+        .ownerId(articleDoc.getOwnerId()!= null ? articleDoc.getOwnerId().toString() : null)
                     .build();
         }
 

@@ -17,6 +17,6 @@ public class ArticleResponse {
             protected String id;
             protected String title;
             protected String body;
-            protected ObjectId ownerId;
+            protected String ownerId;
 
 }
