@@ -1,12 +1,17 @@
-package com.bashilya.blog.file.service;
+package com.bashilya.blog.photo.service;
 
+import com.bashilya.blog.album.exception.AlbumNotExistException;
+import com.bashilya.blog.album.model.AlbumDoc;
+import com.bashilya.blog.album.repository.AlbumRepository;
 import com.bashilya.blog.base.api.request.SearchRequest;
 import com.bashilya.blog.base.api.response.SearchResponse;
-import com.bashilya.blog.file.mapping.FileMapping;
-import com.bashilya.blog.file.exception.FileExistException;
-import com.bashilya.blog.file.exception.FileNotExistException;
-import com.bashilya.blog.file.model.FileDoc;
-import com.bashilya.blog.file.repository.FileRepository;
+import com.bashilya.blog.photo.api.request.PhotoRequest;
+import com.bashilya.blog.photo.api.request.PhotoSearchRequest;
+import com.bashilya.blog.photo.mapping.PhotoMapping;
+import com.bashilya.blog.photo.exception.PhotoExistException;
+import com.bashilya.blog.photo.exception.PhotoNotExistException;
+import com.bashilya.blog.photo.model.PhotoDoc;
+import com.bashilya.blog.photo.repository.PhotoRepository;
 import com.bashilya.blog.user.exception.UserNotExistException;
 import com.bashilya.blog.user.repository.UserRepository;
 import com.mongodb.BasicDBObject;
@@ -26,19 +31,25 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class FileApiService {
-    private final FileRepository fileRepository;
+public class PhotoApiService {
+    private final PhotoRepository photoRepository;
     private  final MongoTemplate mongoTemplate;
+    private final AlbumRepository albumRepository;
+    private final UserRepository userRepository;
     private final GridFsTemplate gridFsTemplate;
     private final GridFsOperations operations;
-    private final UserRepository userRepository;
 
-    public FileDoc create(MultipartFile file, ObjectId ownerId) throws FileExistException, IOException, UserNotExistException {
+    public PhotoDoc create(MultipartFile file, ObjectId ownerId, ObjectId albumId) throws PhotoExistException, AlbumNotExistException, UserNotExistException, IOException {
+
+        if (albumRepository.findById(albumId).isEmpty()) {
+            throw new AlbumNotExistException();
+        }
         if (userRepository.findById(ownerId).isEmpty()) {
             throw new UserNotExistException();
         }
@@ -51,23 +62,17 @@ public class FileApiService {
                 file.getInputStream(), file.getOriginalFilename(), file.getContentType(), metaData
         );
 
-        FileDoc fileDoc = FileDoc.builder()
+        PhotoDoc photoDoc = PhotoDoc.builder()
                 .id(id)
+                .albumId(albumId)
                 .title(file.getOriginalFilename())
                 .ownerId(ownerId)
                 .contentType(file.getContentType())
                 .build();
 
+        photoRepository.save(photoDoc);
 
-
-
-        fileRepository.save(fileDoc);
-
-        return fileDoc;
-    }
-
-    public Optional<FileDoc> findById(ObjectId id) {
-        return fileRepository.findById(id);
+        return photoDoc;
     }
 
     public InputStream downloadById(ObjectId id) throws ChangeSetPersister.NotFoundException, IOException {
@@ -78,15 +83,18 @@ public class FileApiService {
         return operations.getResource(file).getInputStream();
     }
 
-    public SearchResponse<FileDoc> search(SearchRequest request) {
+    public Optional<PhotoDoc> findById(ObjectId id) {
+        return photoRepository.findById(id);
+    }
 
-        Criteria criteria = new Criteria();
+    public SearchResponse<PhotoDoc> search(PhotoSearchRequest request) {
+
+        Criteria criteria = Criteria.where("albumId").is(request.getAlbumId());
         if (request.getQuery() != null && request.getQuery() != "") {
             criteria = criteria.orOperator(
-                    Criteria.where("title").regex(request.getQuery(),"i")
 
                     // TODO : Add Criteria
-//                    Criteria.where("firstName").regex(request.getQuery(), "i"),
+                    Criteria.where("title").regex(request.getQuery(), "i")
 //                    Criteria.where("lastName").regex(request.getQuery(), "i"),
 //                    Criteria.where("email").regex(request.getQuery(), "i")
             );
@@ -94,20 +102,36 @@ public class FileApiService {
 
         Query query = new Query(criteria);
 
-        Long count = mongoTemplate.count(query,FileDoc.class);
+        Long count = mongoTemplate.count(query,PhotoDoc.class);
 
         query.limit(request.getSize());
         query.skip(request.getSkip());
 
-        List<FileDoc> fileDocs = mongoTemplate.find(query, FileDoc.class);
-        return SearchResponse.of(fileDocs,count);
+        List<PhotoDoc> photoDocs = mongoTemplate.find(query, PhotoDoc.class);
+        return SearchResponse.of(photoDocs,count);
     }
 
 
+    public PhotoDoc update(PhotoRequest request) throws PhotoNotExistException {
+        Optional<PhotoDoc> photoDocOptional = photoRepository.findById(request.getId());
+        if (photoDocOptional.isPresent() == false) {
+            throw new PhotoNotExistException();
+        }
 
+        PhotoDoc oldDoc = photoDocOptional.get();
+
+        PhotoDoc photoDoc = PhotoMapping.getInstance().getRequestMapping().convert(request);
+        photoDoc.setId(request.getId());
+        photoDoc.setAlbumId(oldDoc.getAlbumId());
+        photoDoc.setOwnerId(oldDoc.getOwnerId());
+        photoDoc.setContentType(oldDoc.getContentType());
+        photoRepository.save(photoDoc);
+
+        return photoDoc;
+    }
 
     public void delete(ObjectId id) {
         gridFsTemplate.delete(new Query(Criteria.where("_id").is(id)));
-        fileRepository.deleteById(id);
+        photoRepository.deleteById(id);
     }
 }

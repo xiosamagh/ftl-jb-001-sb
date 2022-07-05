@@ -8,6 +8,10 @@ import com.bashilya.blog.album.exception.AlbumExistException;
 import com.bashilya.blog.album.exception.AlbumNotExistException;
 import com.bashilya.blog.album.model.AlbumDoc;
 import com.bashilya.blog.album.repository.AlbumRepository;
+import com.bashilya.blog.photo.api.request.PhotoSearchRequest;
+import com.bashilya.blog.photo.model.PhotoDoc;
+import com.bashilya.blog.photo.repository.PhotoRepository;
+import com.bashilya.blog.photo.service.PhotoApiService;
 import com.bashilya.blog.user.exception.UserNotExistException;
 import com.bashilya.blog.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +32,7 @@ public class AlbumApiService {
     private final AlbumRepository albumRepository;
     private  final MongoTemplate mongoTemplate;
     private final UserRepository userRepository;
+    private final PhotoApiService photoApiService;
 
     public AlbumDoc create(AlbumRequest request) throws AlbumExistException, UserNotExistException {
 
@@ -86,8 +91,14 @@ public class AlbumApiService {
     }
 
     public void delete(ObjectId id) {
+
+        List<PhotoDoc> photoDocs = photoApiService.search(PhotoSearchRequest.builder().albumId(id).size(1000).build()).getList();
+
+        for (PhotoDoc photoDoc : photoDocs) {
+            photoApiService.delete(photoDoc.getId());
+        }
         albumRepository.deleteById(id);
         // TODO delete photos
-        
+
     }
 }

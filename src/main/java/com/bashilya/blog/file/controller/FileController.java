@@ -7,6 +7,7 @@ import com.bashilya.blog.file.api.response.FileResponse;
 import com.bashilya.blog.file.exception.FileExistException;
 import com.bashilya.blog.file.exception.FileNotExistException;
 import com.bashilya.blog.file.mapping.FileMapping;
+import com.bashilya.blog.file.model.FileDoc;
 import com.bashilya.blog.file.routes.FileApiRoutes;
 import com.bashilya.blog.file.service.FileApiService;
 import com.bashilya.blog.user.exception.UserNotExistException;
@@ -44,6 +45,9 @@ public class FileController {
     @ApiOperation(value = "Find file by ID", notes = "Use this when you need full info about file")
 
     public void byId(@ApiParam(value = "File id")@PathVariable ObjectId id, HttpServletResponse response) throws ChangeSetPersister.NotFoundException, IOException {
+        FileDoc fileDoc = fileApiService.findById(id).orElseThrow();
+        response.addHeader("Content-Type", fileDoc.getContentType());
+        response.addHeader("Content-Disposition", ": inline; filename=\""+fileDoc.getTitle()+"\"");
         FileCopyUtils.copy(fileApiService.downloadById(id),response.getOutputStream());
     }
 
