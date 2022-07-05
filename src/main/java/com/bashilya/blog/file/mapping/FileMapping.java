@@ -22,7 +22,9 @@ public class FileMapping {
             return FileResponse.builder()
         .id(fileDoc.getId().toString())
         .title(fileDoc.getTitle())
+                    .contentType(fileDoc.getContentType())
         .ownerId(fileDoc.getOwnerId().toString())
+
                     .build();
         }
 
