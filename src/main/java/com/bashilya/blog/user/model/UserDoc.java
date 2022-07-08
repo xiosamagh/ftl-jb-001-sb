@@ -5,6 +5,9 @@ import org.bson.types.ObjectId;
 import org.springframework.boot.autoconfigure.batch.BatchDataSource;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.util.DigestUtils;
+
+import java.nio.charset.StandardCharsets;
 
 @Document
 @Getter
@@ -25,6 +28,12 @@ public class UserDoc {
 
     private Company company = new Company();
     private Address address = new Address();
+
+    private Integer failLogin = 0;
+
+    public static String hexPassword(String clearPassword) {
+        return DigestUtils.md5DigestAsHex(clearPassword.getBytes(StandardCharsets.UTF_8));
+    }
 
 
 

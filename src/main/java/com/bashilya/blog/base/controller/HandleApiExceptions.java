@@ -1,5 +1,7 @@
 package com.bashilya.blog.base.controller;
 
+import com.bashilya.blog.auth.exceptions.AuthException;
+import com.bashilya.blog.auth.exceptions.NotAccessException;
 import com.bashilya.blog.base.api.response.ErrorResponse;
 import com.bashilya.blog.user.exception.UserExistException;
 import com.bashilya.blog.user.exception.UserNotExistException;
@@ -36,6 +38,16 @@ public class HandleApiExceptions extends ResponseEntityExceptionHandler {
     @ExceptionHandler(UserNotExistException.class)
     public ResponseEntity<Object> userNotExistException(UserNotExistException ex, WebRequest request) {
         return buildResponseEntity(ErrorResponse.of("UserNotExistException", HttpStatus.BAD_REQUEST));
+    }
+
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<Object> authException(AuthException ex, WebRequest request) {
+        return buildResponseEntity(ErrorResponse.of("AuthException", HttpStatus.UNAUTHORIZED));
+    }
+
+    @ExceptionHandler(NotAccessException.class)
+    public ResponseEntity<Object> notAccessException(NotAccessException ex, WebRequest request) {
+        return buildResponseEntity(ErrorResponse.of("NotAccessException", HttpStatus.FORBIDDEN));
     }
 
 
