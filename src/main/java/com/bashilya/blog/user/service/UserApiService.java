@@ -35,7 +35,7 @@ public class UserApiService {
 
         UserDoc userDoc = new UserDoc();
         userDoc.setEmail(request.getEmail());
-        userDoc.setPassword(DigestUtils.md5DigestAsHex(request.getPassword().getBytes(StandardCharsets.UTF_8)));
+        userDoc.setPassword(UserDoc.hexPassword(request.getPassword()));
 
         userDoc = userRepository.save(userDoc);
 
