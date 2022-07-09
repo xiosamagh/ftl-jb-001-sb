@@ -6,6 +6,7 @@ import com.bashilya.blog.article.api.request.ArticleRequest;
 import com.bashilya.blog.article.api.response.ArticleResponse;
 import com.bashilya.blog.article.model.ArticleDoc;
 import lombok.Getter;
+import org.bson.types.ObjectId;
 
 
 import java.util.stream.Collectors;
@@ -13,22 +14,20 @@ import java.util.stream.Collectors;
 @Getter
 public class ArticleMapping {
 
-    public static class RequestMapping extends BaseMapping<ArticleRequest, ArticleDoc> {
-        @Override
-        public ArticleDoc convert(ArticleRequest articleRequest) {
+    public static class RequestMapping {
+
+        public ArticleDoc convert(ArticleRequest articleRequest, ObjectId ownerId) {
             return ArticleDoc.builder()
 
                     .id(articleRequest.getId())
                     .title(articleRequest.getTitle())
                     .body(articleRequest.getBody())
-                    .ownerId(articleRequest.getOwnerId())
+                    .ownerId(ownerId)
                     .build();
         }
 
-        @Override
-        public ArticleRequest unmapping(ArticleDoc articleDoc) {
-            throw new RuntimeException("dont use this");
-        }
+
+
     }
 
 

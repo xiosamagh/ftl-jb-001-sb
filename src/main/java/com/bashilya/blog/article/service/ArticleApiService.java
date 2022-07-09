@@ -1,5 +1,8 @@
 package com.bashilya.blog.article.service;
 
+import com.bashilya.blog.auth.exceptions.AuthException;
+import com.bashilya.blog.auth.exceptions.NotAccessException;
+import com.bashilya.blog.auth.service.AuthService;
 import com.bashilya.blog.base.api.request.SearchRequest;
 import com.bashilya.blog.base.api.response.SearchResponse;
 import com.bashilya.blog.article.api.request.ArticleRequest;
@@ -8,11 +11,13 @@ import com.bashilya.blog.article.exception.ArticleExistException;
 import com.bashilya.blog.article.exception.ArticleNotExistException;
 import com.bashilya.blog.article.model.ArticleDoc;
 import com.bashilya.blog.article.repository.ArticleRepository;
+import com.bashilya.blog.base.service.CheckAccess;
 import com.bashilya.blog.user.exception.UserNotExistException;
 import com.bashilya.blog.user.model.UserDoc;
 import com.bashilya.blog.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -25,19 +30,18 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class ArticleApiService {
+public class ArticleApiService extends CheckAccess<ArticleDoc> {
     private final ArticleRepository articleRepository;
     private  final MongoTemplate mongoTemplate;
     private final UserRepository userRepository;
+    private final AuthService authService;
 
-    public ArticleDoc create(ArticleRequest request) throws ArticleExistException, UserNotExistException {
+    public ArticleDoc create(ArticleRequest request) throws AuthException {
 
-        Optional<UserDoc> userDoc = userRepository.findById(request.getOwnerId());
-        if (userDoc.isPresent() == false) {
-            throw new UserNotExistException();
-        }
+//        Optional<UserDoc> userDoc = userRepository.findById(request.getOwnerId());
+        UserDoc userDoc = authService.currentUser();
 
-        ArticleDoc articleDoc = ArticleMapping.getInstance().getRequestMapping().convert(request);
+        ArticleDoc articleDoc = ArticleMapping.getInstance().getRequestMapping().convert(request,userDoc.getId());
         articleRepository.save(articleDoc);
 
         return articleDoc;
@@ -70,15 +74,17 @@ public class ArticleApiService {
     }
 
 
-    public ArticleDoc update(ArticleRequest request) throws ArticleNotExistException {
+    public ArticleDoc update(ArticleRequest request) throws ArticleNotExistException, AuthException, NotAccessException {
         Optional<ArticleDoc> articleDocOptional = articleRepository.findById(request.getId());
         if (articleDocOptional == null) {
             throw new ArticleNotExistException();
         }
 
         ArticleDoc oldDoc = articleDocOptional.get();
+        UserDoc owner = checkAccess(oldDoc);
 
-        ArticleDoc articleDoc = ArticleMapping.getInstance().getRequestMapping().convert(request);
+
+        ArticleDoc articleDoc = ArticleMapping.getInstance().getRequestMapping().convert(request,owner.getId());
         articleDoc.setId(request.getId());
         articleDoc.setOwnerId(oldDoc.getOwnerId());
         articleRepository.save(articleDoc);
@@ -86,7 +92,18 @@ public class ArticleApiService {
         return articleDoc;
     }
 
-    public void delete(ObjectId id) {
+    public void delete(ObjectId id) throws NotAccessException, AuthException, ChangeSetPersister.NotFoundException {
+        checkAccess(articleRepository.findById(id).orElseThrow(ChangeSetPersister.NotFoundException::new));
         articleRepository.deleteById(id);
+    }
+
+    @Override
+    protected ObjectId getOwnerFromEntity(ArticleDoc entity) {
+        return entity.getOwnerId();
+    }
+
+    @Override
+    protected AuthService authService() {
+        return authService;
     }
 }

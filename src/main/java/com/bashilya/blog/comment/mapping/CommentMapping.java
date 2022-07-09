@@ -6,6 +6,7 @@ import com.bashilya.blog.comment.api.request.CommentRequest;
 import com.bashilya.blog.comment.api.response.CommentResponse;
 import com.bashilya.blog.comment.model.CommentDoc;
 import lombok.Getter;
+import org.bson.types.ObjectId;
 
 
 import java.util.stream.Collectors;
@@ -13,19 +14,19 @@ import java.util.stream.Collectors;
 @Getter
 public class CommentMapping {
 
-    public static class RequestMapping extends BaseMapping<CommentRequest, CommentDoc> {
-        @Override
-        public CommentDoc convert(CommentRequest commentRequest) {
+    public static class RequestMapping {
+
+        public CommentDoc convert(CommentRequest commentRequest, ObjectId userId) {
             return CommentDoc.builder()
 
                     .id(commentRequest.getId())
                     .articleId(commentRequest.getArticleId())
-                    .userId(commentRequest.getUserId())
+                    .userId(userId)
                     .message(commentRequest.getMessage())
                     .build();
         }
 
-        @Override
+
         public CommentRequest unmapping(CommentDoc commentDoc) {
             throw new RuntimeException("dont use this");
         }

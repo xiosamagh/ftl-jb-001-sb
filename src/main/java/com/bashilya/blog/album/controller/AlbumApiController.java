@@ -1,5 +1,7 @@
 package com.bashilya.blog.album.controller;
 
+import com.bashilya.blog.auth.exceptions.AuthException;
+import com.bashilya.blog.auth.exceptions.NotAccessException;
 import com.bashilya.blog.base.api.request.SearchRequest;
 import com.bashilya.blog.base.api.response.OkResponse;
 import com.bashilya.blog.base.api.response.SearchResponse;
@@ -33,7 +35,7 @@ public class AlbumApiController {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 400, message = "Album already exist")
     })
-    public OkResponse<AlbumResponse> create(@RequestBody AlbumRequest request) throws AlbumExistException, UserNotExistException {
+    public OkResponse<AlbumResponse> create(@RequestBody AlbumRequest request) throws AlbumExistException, UserNotExistException, AuthException {
 
         return OkResponse.of(AlbumMapping.getInstance().getResponseMapping().convert(albumApiService.create(request)));
     }
@@ -66,12 +68,14 @@ public class AlbumApiController {
     @ApiOperation(value = "Update album", notes = "Use this when you need update album info")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 400, message = "Album ID Invalid")
+            @ApiResponse(code = 400, message = "Album ID Invalid"),
+            @ApiResponse(code = 401, message = "Need Auth"),
+            @ApiResponse(code = 403, message = "Not access")
     })
     public OkResponse<AlbumResponse> updateById(
             @ApiParam(value = "Album id") @PathVariable String id,
             @RequestBody AlbumRequest albumRequest
-            ) throws AlbumNotExistException {
+            ) throws AlbumNotExistException, NotAccessException, AuthException {
         return OkResponse.of(AlbumMapping.getInstance().getResponseMapping().convert(
                 albumApiService.update(albumRequest)
         ));
@@ -86,7 +90,7 @@ public class AlbumApiController {
     public OkResponse<String> deleteById(
 
             @ApiParam(value = "Album id") @PathVariable ObjectId id
-    ) {
+    ) throws NotAccessException, AuthException, ChangeSetPersister.NotFoundException {
          albumApiService.delete(id);
          return OkResponse.of(HttpStatus.OK.toString());
     }

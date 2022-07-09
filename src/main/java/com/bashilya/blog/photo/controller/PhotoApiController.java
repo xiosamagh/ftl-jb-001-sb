@@ -1,6 +1,8 @@
 package com.bashilya.blog.photo.controller;
 
 import com.bashilya.blog.album.exception.AlbumNotExistException;
+import com.bashilya.blog.auth.exceptions.AuthException;
+import com.bashilya.blog.auth.exceptions.NotAccessException;
 import com.bashilya.blog.base.api.request.SearchRequest;
 import com.bashilya.blog.base.api.response.OkResponse;
 import com.bashilya.blog.base.api.response.SearchResponse;
@@ -68,7 +70,7 @@ public class PhotoApiController {
     public OkResponse<PhotoResponse> updateById(
             @ApiParam(value = "Photo id") @PathVariable String id,
             @RequestBody PhotoRequest photoRequest
-            ) throws PhotoNotExistException {
+            ) throws PhotoNotExistException, NotAccessException, AuthException {
         return OkResponse.of(PhotoMapping.getInstance().getResponseMapping().convert(
                 photoApiService.update(photoRequest)
         ));
@@ -83,7 +85,7 @@ public class PhotoApiController {
     public OkResponse<String> deleteById(
 
             @ApiParam(value = "Photo id") @PathVariable ObjectId id
-    ) {
+    ) throws NotAccessException, AuthException, ChangeSetPersister.NotFoundException {
          photoApiService.delete(id);
          return OkResponse.of(HttpStatus.OK.toString());
     }
