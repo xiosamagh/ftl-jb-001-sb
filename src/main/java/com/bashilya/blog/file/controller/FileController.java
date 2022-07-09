@@ -1,5 +1,6 @@
 package com.bashilya.blog.file.controller;
 
+import com.bashilya.blog.auth.exceptions.AuthException;
 import com.bashilya.blog.base.api.request.SearchRequest;
 import com.bashilya.blog.base.api.response.OkResponse;
 import com.bashilya.blog.base.api.response.SearchResponse;
@@ -36,9 +37,9 @@ public class FileController {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 400, message = "File already exist")
     })
-    public @ResponseBody OkResponse<FileResponse> create(@RequestParam MultipartFile file, @RequestParam ObjectId ownerId) throws FileExistException, IOException, UserNotExistException {
+    public @ResponseBody OkResponse<FileResponse> create(@RequestParam MultipartFile file) throws AuthException, IOException {
 
-        return OkResponse.of(FileMapping.getInstance().getResponseMapping().convert(fileApiService.create(file,ownerId)));
+        return OkResponse.of(FileMapping.getInstance().getResponseMapping().convert(fileApiService.create(file)));
     }
 
     @GetMapping(FileApiRoutes.DOWNLOAD)

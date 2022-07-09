@@ -1,7 +1,11 @@
 package com.bashilya.blog.user.service;
 
+import com.bashilya.blog.auth.exceptions.AuthException;
+import com.bashilya.blog.auth.exceptions.NotAccessException;
+import com.bashilya.blog.auth.service.AuthService;
 import com.bashilya.blog.base.api.request.SearchRequest;
 import com.bashilya.blog.base.api.response.SearchResponse;
+import com.bashilya.blog.base.service.CheckAccess;
 import com.bashilya.blog.user.api.request.RegistrationRequest;
 import com.bashilya.blog.user.api.request.UserRequest;
 import com.bashilya.blog.user.exception.UserExistException;
@@ -26,6 +30,7 @@ import java.util.Optional;
 public class UserApiService {
     private final UserRepository userRepository;
     private  final MongoTemplate mongoTemplate;
+    private final AuthService authService;
 
     public UserDoc registration(RegistrationRequest request) throws UserExistException {
 
@@ -69,13 +74,11 @@ public class UserApiService {
     }
 
 
-    public UserDoc update(UserRequest request) throws UserNotExistException {
-        Optional<UserDoc> userDocOptional = userRepository.findById(request.getId());
-        if (userDocOptional == null) {
-            throw new UserNotExistException();
-        }
+    public UserDoc update(UserRequest request) throws AuthException {
+        UserDoc userDoc = authService.currentUser();
 
-        UserDoc userDoc = userDocOptional.get();
+
+
         userDoc.setLastName(request.getLastName());
         userDoc.setFirstName(request.getFirstName());
         userDoc.setAddress(request.getAddress());
@@ -86,7 +89,9 @@ public class UserApiService {
         return userDoc;
     }
 
-    public void delete(ObjectId id) {
+    public void delete(ObjectId id) throws NotAccessException, AuthException {
+
+        if (authService.currentUser().getId().equals(id) == false) throw new NotAccessException();
         userRepository.deleteById(id);
     }
 }

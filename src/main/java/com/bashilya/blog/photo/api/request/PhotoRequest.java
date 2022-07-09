@@ -15,8 +15,7 @@ public class PhotoRequest {
 
             private ObjectId id;
             private String title;
-            private ObjectId ownerId;
             private ObjectId albumId;
-    private String contentType;
+            private String contentType;
 
 }

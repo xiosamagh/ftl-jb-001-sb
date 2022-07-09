@@ -1,5 +1,7 @@
 package com.bashilya.blog.file.controller;
 
+import com.bashilya.blog.auth.exceptions.AuthException;
+import com.bashilya.blog.auth.exceptions.NotAccessException;
 import com.bashilya.blog.base.api.request.SearchRequest;
 import com.bashilya.blog.base.api.response.OkResponse;
 import com.bashilya.blog.base.api.response.SearchResponse;
@@ -58,7 +60,7 @@ public class FileApiController {
     public OkResponse<String> deleteById(
 
             @ApiParam(value = "File id") @PathVariable ObjectId id
-    ) {
+    ) throws NotAccessException, AuthException, ChangeSetPersister.NotFoundException {
          fileApiService.delete(id);
          return OkResponse.of(HttpStatus.OK.toString());
     }

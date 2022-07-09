@@ -3,8 +3,12 @@ package com.bashilya.blog.photo.service;
 import com.bashilya.blog.album.exception.AlbumNotExistException;
 import com.bashilya.blog.album.model.AlbumDoc;
 import com.bashilya.blog.album.repository.AlbumRepository;
+import com.bashilya.blog.auth.exceptions.AuthException;
+import com.bashilya.blog.auth.exceptions.NotAccessException;
+import com.bashilya.blog.auth.service.AuthService;
 import com.bashilya.blog.base.api.request.SearchRequest;
 import com.bashilya.blog.base.api.response.SearchResponse;
+import com.bashilya.blog.base.service.CheckAccess;
 import com.bashilya.blog.photo.api.request.PhotoRequest;
 import com.bashilya.blog.photo.api.request.PhotoSearchRequest;
 import com.bashilya.blog.photo.mapping.PhotoMapping;
@@ -13,6 +17,7 @@ import com.bashilya.blog.photo.exception.PhotoNotExistException;
 import com.bashilya.blog.photo.model.PhotoDoc;
 import com.bashilya.blog.photo.repository.PhotoRepository;
 import com.bashilya.blog.user.exception.UserNotExistException;
+import com.bashilya.blog.user.model.UserDoc;
 import com.bashilya.blog.user.repository.UserRepository;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
@@ -37,22 +42,24 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class PhotoApiService {
+public class PhotoApiService extends CheckAccess<PhotoDoc> {
     private final PhotoRepository photoRepository;
     private  final MongoTemplate mongoTemplate;
     private final AlbumRepository albumRepository;
-    private final UserRepository userRepository;
     private final GridFsTemplate gridFsTemplate;
     private final GridFsOperations operations;
+    private final AuthService authService;
 
-    public PhotoDoc create(MultipartFile file, ObjectId ownerId, ObjectId albumId) throws PhotoExistException, AlbumNotExistException, UserNotExistException, IOException {
+    public PhotoDoc create(MultipartFile file, ObjectId albumId) throws AuthException, AlbumNotExistException, IOException, NotAccessException {
 
-        if (albumRepository.findById(albumId).isEmpty()) {
-            throw new AlbumNotExistException();
+        UserDoc userDoc = authService.currentUser();
+        AlbumDoc albumDoc = albumRepository.findById(albumId).orElseThrow(AlbumNotExistException::new);
+
+
+        if (albumDoc.getOwnerId().equals(userDoc.getId()) == false) {
+            throw new NotAccessException();
         }
-        if (userRepository.findById(ownerId).isEmpty()) {
-            throw new UserNotExistException();
-        }
+
 
         DBObject metaData = new BasicDBObject();
         metaData.put("type", file.getContentType());
@@ -66,7 +73,7 @@ public class PhotoApiService {
                 .id(id)
                 .albumId(albumId)
                 .title(file.getOriginalFilename())
-                .ownerId(ownerId)
+                .ownerId(userDoc.getId())
                 .contentType(file.getContentType())
                 .build();
 
@@ -112,15 +119,16 @@ public class PhotoApiService {
     }
 
 
-    public PhotoDoc update(PhotoRequest request) throws PhotoNotExistException {
+    public PhotoDoc update(PhotoRequest request) throws PhotoNotExistException, NotAccessException, AuthException {
         Optional<PhotoDoc> photoDocOptional = photoRepository.findById(request.getId());
         if (photoDocOptional.isPresent() == false) {
             throw new PhotoNotExistException();
         }
 
         PhotoDoc oldDoc = photoDocOptional.get();
+        UserDoc owner = checkAccess(oldDoc);
 
-        PhotoDoc photoDoc = PhotoMapping.getInstance().getRequestMapping().convert(request);
+        PhotoDoc photoDoc = PhotoMapping.getInstance().getRequestMapping().convert(request,owner.getId());
         photoDoc.setId(request.getId());
         photoDoc.setAlbumId(oldDoc.getAlbumId());
         photoDoc.setOwnerId(oldDoc.getOwnerId());
@@ -130,8 +138,21 @@ public class PhotoApiService {
         return photoDoc;
     }
 
-    public void delete(ObjectId id) {
+    public void delete(ObjectId id) throws NotAccessException, AuthException, ChangeSetPersister.NotFoundException {
+        checkAccess(photoRepository.findById(id).orElseThrow(ChangeSetPersister.NotFoundException::new));
         gridFsTemplate.delete(new Query(Criteria.where("_id").is(id)));
         photoRepository.deleteById(id);
+    }
+
+
+
+    @Override
+    protected ObjectId getOwnerFromEntity(PhotoDoc entity) {
+        return entity.getOwnerId();
+    }
+
+    @Override
+    protected AuthService authService() {
+        return authService;
     }
 }

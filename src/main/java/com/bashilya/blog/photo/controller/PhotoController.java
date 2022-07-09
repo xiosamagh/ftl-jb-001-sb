@@ -1,6 +1,8 @@
 package com.bashilya.blog.photo.controller;
 
 import com.bashilya.blog.album.exception.AlbumNotExistException;
+import com.bashilya.blog.auth.exceptions.AuthException;
+import com.bashilya.blog.auth.exceptions.NotAccessException;
 import com.bashilya.blog.base.api.response.OkResponse;
 import com.bashilya.blog.file.exception.FileExistException;
 import com.bashilya.blog.photo.api.response.PhotoResponse;
@@ -37,9 +39,9 @@ public class PhotoController {
     public @ResponseBody OkResponse<PhotoResponse> create(@RequestParam MultipartFile file,
                                                           @RequestParam ObjectId ownerId,
                                                           @RequestParam ObjectId albumId
-    ) throws  IOException, UserNotExistException, AlbumNotExistException, PhotoExistException {
+    ) throws AlbumNotExistException, NotAccessException, AuthException, IOException {
 
-        return OkResponse.of(PhotoMapping.getInstance().getResponseMapping().convert(photoApiService.create(file,ownerId,albumId)));
+        return OkResponse.of(PhotoMapping.getInstance().getResponseMapping().convert(photoApiService.create(file,albumId)));
     }
 
     @GetMapping(PhotoApiRoutes.DOWNLOAD)

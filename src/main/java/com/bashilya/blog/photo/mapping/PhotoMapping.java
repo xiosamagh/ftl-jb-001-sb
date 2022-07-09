@@ -6,6 +6,7 @@ import com.bashilya.blog.photo.api.request.PhotoRequest;
 import com.bashilya.blog.photo.api.response.PhotoResponse;
 import com.bashilya.blog.photo.model.PhotoDoc;
 import lombok.Getter;
+import org.bson.types.ObjectId;
 
 
 import java.util.stream.Collectors;
@@ -13,23 +14,20 @@ import java.util.stream.Collectors;
 @Getter
 public class PhotoMapping {
 
-    public static class RequestMapping extends BaseMapping<PhotoRequest, PhotoDoc> {
-        @Override
-        public PhotoDoc convert(PhotoRequest photoRequest) {
+    public static class RequestMapping {
+
+        public PhotoDoc convert(PhotoRequest photoRequest, ObjectId ownerId) {
             return PhotoDoc.builder()
 
                     .id(photoRequest.getId())
                     .title(photoRequest.getTitle())
-                    .ownerId(photoRequest.getOwnerId())
+                    .ownerId(ownerId)
                     .albumId(photoRequest.getAlbumId())
                     .contentType(photoRequest.getContentType())
                     .build();
         }
 
-        @Override
-        public PhotoRequest unmapping(PhotoDoc photoDoc) {
-            throw new RuntimeException("dont use this");
-        }
+
     }
 
 

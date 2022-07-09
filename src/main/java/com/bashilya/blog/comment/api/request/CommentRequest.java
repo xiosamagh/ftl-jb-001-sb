@@ -14,7 +14,6 @@ public class CommentRequest {
 
             private ObjectId id;
             private ObjectId articleId;
-            private ObjectId userId;
             private String message;
 
 }
