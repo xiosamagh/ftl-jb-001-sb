@@ -6,6 +6,7 @@ import com.bashilya.blog.auth.service.AuthService;
 import com.bashilya.blog.base.api.request.SearchRequest;
 import com.bashilya.blog.base.api.response.SearchResponse;
 import com.bashilya.blog.base.service.CheckAccess;
+import com.bashilya.blog.base.service.EmailSenderService;
 import com.bashilya.blog.user.api.request.RegistrationRequest;
 import com.bashilya.blog.user.api.request.UserRequest;
 import com.bashilya.blog.user.exception.UserExistException;
@@ -31,6 +32,7 @@ public class UserApiService {
     private final UserRepository userRepository;
     private  final MongoTemplate mongoTemplate;
     private final AuthService authService;
+    private final EmailSenderService emailSenderService;
 
     public UserDoc registration(RegistrationRequest request) throws UserExistException {
 
@@ -43,6 +45,8 @@ public class UserApiService {
         userDoc.setPassword(UserDoc.hexPassword(request.getPassword()));
 
         userDoc = userRepository.save(userDoc);
+
+        emailSenderService.sendEmailRegistration(request.getEmail());
 
         return userDoc;
     }
